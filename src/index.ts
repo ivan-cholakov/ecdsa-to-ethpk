@@ -1,3 +1,5 @@
+import { hexToU8a } from '@polkadot/util';
+import { blake2AsU8a, encodeAddress } from '@polkadot/util-crypto';
 import { ethers } from 'ethers';
 
 interface GeneratedEthPkResult {
@@ -33,7 +35,7 @@ function encodePublicKeyToECDSA(publicKey: string): string {
 
   return ecdsaPublicKey.toString('hex');
 }
-// verify the validity of generated ecdsa
+
 // decode from ecdsa to eth pk
 function decodeECDSAToPublicKey(ecdsa:string):string{
     if(ecdsa.startsWith('0x')){
@@ -49,6 +51,11 @@ function decodeECDSAToPublicKey(ecdsa:string):string{
     return `0x${publicKeyBuffer.toString('hex')}`
 }
 // convert to avn k
+function convertToPolkadotAddress(publicKey:string):string{
+    const publicKeyBuffer = hexToU8a(publicKey)
+    const blake2Hash = blake2AsU8a(publicKeyBuffer)
+    return encodeAddress(blake2Hash)
+}
 
 function main(): void {
   const generatedKeyPairs:GeneratedEthPkResult[] = generatePublicKeys();
@@ -60,6 +67,8 @@ function main(): void {
   console.log({ecdsaSignatures})
   const recoveredPublicKeys = ecdsaSignatures.map(decodeECDSAToPublicKey)
   console.log({recoveredPublicKeys, publicKeys})
+  const polkadotAddresses = recoveredPublicKeys.map(convertToPolkadotAddress)
+  console.log({polkadotAddresses})
 }
 
 main();
